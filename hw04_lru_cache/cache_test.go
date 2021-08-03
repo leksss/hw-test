@@ -50,7 +50,48 @@ func TestCache(t *testing.T) {
 	})
 
 	t.Run("purge logic", func(t *testing.T) {
-		// Write me
+		c := NewCache(2)
+		c.Set("aaa", 1)
+		c.Set("bbb", 2)
+		c.Clear()
+
+		_, ok := c.Get("aaa")
+		require.False(t, ok)
+
+		_, ok = c.Get("bbb")
+		require.False(t, ok)
+	})
+
+	t.Run("overflow", func(t *testing.T) {
+		c := NewCache(1)
+		c.Set("aaa", 1)
+		c.Set("bbb", 2)
+		c.Set("ccc", 3)
+
+		_, ok := c.Get("ccc")
+		require.True(t, ok)
+	})
+
+	t.Run("push lru items", func(t *testing.T) {
+		c := NewCache(3)
+		c.Set("aaa", 1)
+		c.Set("bbb", 2)
+		c.Set("ccc", 3)
+
+		c.Get("bbb")
+		c.Get("ccc")
+
+		c.Set("ddd", 4)
+
+		_, ok := c.Get("ddd")
+		require.True(t, ok)
+		_, ok = c.Get("ccc")
+		require.True(t, ok)
+		_, ok = c.Get("bbb")
+		require.True(t, ok)
+
+		_, ok = c.Get("aaa")
+		require.False(t, ok)
 	})
 }
 

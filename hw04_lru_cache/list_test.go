@@ -48,4 +48,58 @@ func TestList(t *testing.T) {
 		}
 		require.Equal(t, []int{70, 80, 60, 40, 10, 30, 50}, elems)
 	})
+
+	t.Run("list item front", func(t *testing.T) {
+		l := NewList()
+		l.PushFront(1)
+
+		item := l.Front()
+		require.Nil(t, item.Prev)
+		require.Nil(t, item.Next)
+
+		l.PushFront(1)
+		item = l.Front()
+		require.Nil(t, item.Prev)
+		require.NotNil(t, item.Next)
+	})
+
+	t.Run("list item back", func(t *testing.T) {
+		l := NewList()
+		l.PushBack(1)
+
+		item := l.Back()
+		require.Nil(t, item.Prev)
+		require.Nil(t, item.Next)
+
+		l.PushBack(1)
+		item = l.Back()
+		require.NotNil(t, item.Prev)
+		require.Nil(t, item.Next)
+	})
+
+	t.Run("remove", func(t *testing.T) {
+		l := NewList()
+		l.PushBack(1)
+		l.PushBack(2)
+		l.PushBack(3)
+		l.PushBack(4)
+		l.PushBack(5)
+
+		l.Remove(l.Back())
+		equalList(t, l, []int{1, 2, 3, 4})
+
+		l.Remove(l.Front())
+		equalList(t, l, []int{2, 3, 4})
+
+		l.Remove(l.Front().Next)
+		equalList(t, l, []int{2, 4})
+	})
+}
+
+func equalList(t require.TestingT, l List, expected interface{}) {
+	elems := make([]int, 0, l.Len())
+	for i := l.Front(); i != nil; i = i.Next {
+		elems = append(elems, i.Value.(int))
+	}
+	require.Equal(t, expected, elems)
 }
