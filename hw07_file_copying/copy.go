@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 
@@ -21,7 +22,7 @@ func Copy(src, dst string, offset, limit int64) error {
 
 	srcStat, err := os.Stat(src)
 	if err != nil {
-		return err
+		return fmt.Errorf("os.Stat: %w", err)
 	}
 
 	if !srcStat.Mode().IsRegular() {
@@ -32,50 +33,49 @@ func Copy(src, dst string, offset, limit int64) error {
 		return ErrOffsetExceedsFileSize
 	}
 
-	iLimit := int(limit)
-	bufSize := int(srcStat.Size())
+	bufSize := srcStat.Size()
 
-	if limit+offset > srcStat.Size() {
-		iLimit = int(srcStat.Size() - offset)
+	if limit > srcStat.Size()-offset {
+		limit = srcStat.Size() - offset
 	}
 
-	if iLimit > 0 && iLimit < bufSize {
-		bufSize = iLimit
+	if limit > 0 && limit < bufSize {
+		bufSize = limit
 	}
 
 	buf := make([]byte, bufSize)
 
 	reader, err := os.Open(src)
 	if err != nil {
-		return err
+		return fmt.Errorf("os.Open: %w", err)
 	}
 	defer reader.Close()
 
 	writer, err := os.Create(dst)
 	if err != nil {
-		return err
+		return fmt.Errorf("os.Create: %w", err)
 	}
 	defer writer.Close()
 
 	n, err := reader.ReadAt(buf, offset)
 	if err != nil {
 		if !errors.Is(err, io.EOF) {
-			return err
+			return fmt.Errorf("reader.ReadAt: %w", err)
 		}
 	}
 
 	if offset > 0 {
 		_, err = reader.Seek(offset, 0)
 		if err != nil {
-			return err
+			return fmt.Errorf("reader.Seek: %w", err)
 		}
 	}
 
-	bar := pb.Full.Start(bufSize)
+	bar := pb.Full.Start64(bufSize)
 	barReader := bar.NewProxyReader(reader)
 
 	if _, err := io.CopyN(writer, barReader, int64(n)); err != nil {
-		return err
+		return fmt.Errorf("io.CopyN: %w", err)
 	}
 
 	bar.Finish()
