@@ -43,8 +43,6 @@ func Copy(src, dst string, offset, limit int64) error {
 		bufSize = limit
 	}
 
-	buf := make([]byte, bufSize)
-
 	reader, err := os.Open(src)
 	if err != nil {
 		return fmt.Errorf("os.Open: %w", err)
@@ -57,7 +55,7 @@ func Copy(src, dst string, offset, limit int64) error {
 	}
 	defer writer.Close()
 
-	n, err := reader.ReadAt(buf, offset)
+	n, err := reader.ReadAt(make([]byte, bufSize), offset)
 	if err != nil {
 		if !errors.Is(err, io.EOF) {
 			return fmt.Errorf("reader.ReadAt: %w", err)
