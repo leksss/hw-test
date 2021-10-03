@@ -55,13 +55,6 @@ func Copy(src, dst string, offset, limit int64) error {
 	}
 	defer writer.Close()
 
-	n, err := reader.ReadAt(make([]byte, bufSize), 0)
-	if err != nil {
-		if !errors.Is(err, io.EOF) {
-			return fmt.Errorf("reader.ReadAt: %w", err)
-		}
-	}
-
 	if offset > 0 {
 		_, err = reader.Seek(offset, 0)
 		if err != nil {
@@ -72,7 +65,7 @@ func Copy(src, dst string, offset, limit int64) error {
 	bar := pb.Full.Start64(bufSize)
 	barReader := bar.NewProxyReader(reader)
 
-	if _, err := io.CopyN(writer, barReader, int64(n)); err != nil {
+	if _, err := io.CopyN(writer, barReader, bufSize); err != nil {
 		return fmt.Errorf("io.CopyN: %w", err)
 	}
 
