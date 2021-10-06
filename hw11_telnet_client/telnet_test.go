@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"net"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -61,5 +62,15 @@ func TestTelnetClient(t *testing.T) {
 		}()
 
 		wg.Wait()
+	})
+
+	t.Run("connection errors", func(t *testing.T) {
+		client := NewTelnetClient("127.0.0.1:4242", 10*time.Second, os.Stdin, os.Stdout)
+
+		err := client.Send()
+		require.ErrorIs(t, ErrInvalidConnection, err)
+
+		err = client.Receive()
+		require.ErrorIs(t, ErrInvalidConnection, err)
 	})
 }
