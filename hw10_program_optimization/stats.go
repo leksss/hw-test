@@ -31,17 +31,12 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 			continue
 		}
 
-		if user.Email[len(user.Email)-len(domain):] != domain {
+		if !strings.HasSuffix(user.Email, domain) {
 			continue
 		}
 
 		domain := strings.ToLower(user.Email[strings.LastIndex(user.Email, "@")+1:])
-		if num, ok := domainStat[domain]; ok {
-			num++
-			domainStat[domain] = num
-		} else {
-			domainStat[domain] = 1
-		}
+		domainStat[domain]++
 	}
 
 	if scanner.Err() != nil {
