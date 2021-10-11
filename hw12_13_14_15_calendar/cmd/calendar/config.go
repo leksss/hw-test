@@ -1,20 +1,55 @@
 package main
 
-// При желании конфигурацию можно вынести в internal/config.
-// Организация конфига в main принуждает нас сужать API компонентов, использовать
-// при их конструировании только необходимые параметры, а также уменьшает вероятность циклической зависимости.
+import (
+	"io/ioutil"
+	"log"
+	"os"
+	"path"
+	"runtime"
+
+	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/logger"
+	"gopkg.in/yaml.v2"
+)
+
 type Config struct {
-	Logger LoggerConf
-	// TODO
+	configFile  string
+	projectRoot string
+
+	Logger      logger.LoggerConf `yaml:"logger"`
 }
 
-type LoggerConf struct {
-	Level string
-	// TODO
+func NewConfig(configFile string) Config {
+	return Config{
+		configFile: configFile,
+	}
 }
 
-func NewConfig() Config {
-	return Config{}
+func (c *Config) Parse() error {
+	projectRoot, err := getProjectRoot()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	configYml, err := ioutil.ReadFile(projectRoot + "/" + c.configFile)
+	if err != nil {
+		return err
+	}
+
+	err = yaml.Unmarshal(configYml, c)
+	if err != nil {
+		return err
+	}
+
+	c.projectRoot = projectRoot
+	return nil
 }
 
-// TODO
+func getProjectRoot() (string, error) {
+	_, filename, _, _ := runtime.Caller(0)
+	dir := path.Join(path.Dir(filename), "../..")
+	err := os.Chdir(dir)
+	if err != nil {
+		return "", err
+	}
+	return dir, nil
+}

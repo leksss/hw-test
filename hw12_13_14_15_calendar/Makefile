@@ -12,6 +12,7 @@ run: build
 
 build-img:
 	docker build \
+		--no-cache \
 		--build-arg=LDFLAGS="$(LDFLAGS)" \
 		-t $(DOCKER_IMG) \
 		-f build/Dockerfile .

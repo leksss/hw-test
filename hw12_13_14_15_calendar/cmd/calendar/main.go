@@ -3,33 +3,34 @@ package main
 import (
 	"context"
 	"flag"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/app"
-	"github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/logger"
-	internalhttp "github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/server/http"
-	memorystorage "github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/storage/memory"
+	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/app"
+	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/logger"
+	internalhttp "github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/server/http"
+	memorystorage "github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/storage/memory"
 )
 
-var configFile string
-
-func init() {
-	flag.StringVar(&configFile, "config", "/etc/calendar/config.toml", "Path to configuration file")
-}
-
 func main() {
-	flag.Parse()
+	configFile := flag.String("config", "configs/config.yaml", "path to config file")
 
+	flag.Parse()
 	if flag.Arg(0) == "version" {
 		printVersion()
 		return
 	}
 
-	config := NewConfig()
-	logg := logger.New(config.Logger.Level)
+	config := NewConfig(*configFile)
+	err := config.Parse()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	logg := logger.New(config.Logger, config.projectRoot)
 
 	storage := memorystorage.New()
 	calendar := app.New(logg, storage)
