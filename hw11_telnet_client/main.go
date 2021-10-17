@@ -11,26 +11,25 @@ import (
 	"time"
 )
 
+const (
+	DefaultHost    = "127.0.0.1"
+	DefaultPort    = "4242"
+	DefaultTimeout = 10 * time.Second
+)
+
 func main() {
-	// default host
-	host := "127.0.0.1"
-
-	// default port
-	port := "4242"
-
-	// default timeout
-	timeout := 10 * time.Second
-
 	flagTimeout := flag.Duration("timeout", 10*time.Second, "connect timeout")
 
 	flag.Parse()
+	host := DefaultHost
 	if h := flag.Arg(0); h != "" {
 		host = h
 	}
+	port := DefaultPort
 	if p := flag.Arg(1); p != "" {
 		port = p
 	}
-
+	timeout := DefaultTimeout
 	if flagTimeout != nil {
 		timeout = *flagTimeout
 	}
