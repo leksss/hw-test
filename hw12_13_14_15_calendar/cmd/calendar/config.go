@@ -15,7 +15,15 @@ type Config struct {
 	configFile  string
 	projectRoot string
 
-	Logger      logger.LoggerConf `yaml:"logger"`
+	Logger   logger.LoggerConf `yaml:"logger"`
+	Database DatabaseConf      `yaml:"database"`
+}
+
+type DatabaseConf struct {
+	Host     string
+	User     string
+	Password string
+	Name     string
 }
 
 func NewConfig(configFile string) Config {
