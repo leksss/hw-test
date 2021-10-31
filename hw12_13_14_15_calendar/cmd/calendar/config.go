@@ -7,23 +7,26 @@ import (
 	"path"
 	"runtime"
 
-	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/logger"
+	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/domain/interfaces"
+	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/logger"
+	internalhttp "github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/server/http"
 	"gopkg.in/yaml.v2"
+)
+
+const (
+	EnvTest = "test"
+	EnvDev  = "dev"  //nolint:deadcode
+	EnvProd = "prod" //nolint:deadcode
 )
 
 type Config struct {
 	configFile  string
 	projectRoot string
 
-	Logger   logger.LoggerConf `yaml:"logger"`
-	Database DatabaseConf      `yaml:"database"`
-}
-
-type DatabaseConf struct {
-	Host     string
-	User     string
-	Password string
-	Name     string
+	Env      string                  `yaml:"env"`
+	Server   internalhttp.ServerConf `yaml:"server"`
+	Logger   logger.LoggConf         `yaml:"logger"`
+	Database interfaces.DatabaseConf `yaml:"database"`
 }
 
 func NewConfig(configFile string) Config {
@@ -53,10 +56,9 @@ func (c *Config) Parse() error {
 }
 
 func getProjectRoot() (string, error) {
-	_, filename, _, _ := runtime.Caller(0)
+	_, filename, _, _ := runtime.Caller(0) // nolint
 	dir := path.Join(path.Dir(filename), "../..")
-	err := os.Chdir(dir)
-	if err != nil {
+	if err := os.Chdir(dir); err != nil {
 		return "", err
 	}
 	return dir, nil

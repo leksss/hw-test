@@ -7,16 +7,21 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+type Log interface {
+	Info(msg string)
+	Error(msg string)
+}
+
 type Logger struct {
 	logger *zap.Logger
 }
 
-type LoggerConf struct {
+type LoggConf struct {
 	Level string
 	File  string
 }
 
-func New(config LoggerConf, projectRoot string) *Logger {
+func New(config LoggConf, projectRoot string) *Logger {
 	var zapLevel zapcore.Level
 	zapLevel.Set(config.Level)
 
@@ -28,7 +33,7 @@ func New(config LoggerConf, projectRoot string) *Logger {
 		projectRoot + "/" + config.File,
 	}
 
-	logger, err := cfg.Build()
+	logger, err := cfg.Build(zap.AddCallerSkip(1))
 	if err != nil {
 		log.Fatalf("can't initialize logger logger: %v", err)
 	}
