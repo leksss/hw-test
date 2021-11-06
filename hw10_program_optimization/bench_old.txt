@@ -1,0 +1,5 @@
+BenchmarkGetDomainStat-12    	      54	 213467211 ns/op	132846020 B/op	 1700086 allocs/op
+BenchmarkGetDomainStat-12    	      57	 216672600 ns/op	132847380 B/op	 1700086 allocs/op
+BenchmarkGetDomainStat-12    	      55	 219348341 ns/op	132846004 B/op	 1700085 allocs/op
+BenchmarkGetDomainStat-12    	      55	 216623573 ns/op	132846674 B/op	 1700086 allocs/op
+BenchmarkGetDomainStat-12    	      55	 216003774 ns/op	132845977 B/op	 1700086 allocs/op
