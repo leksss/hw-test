@@ -35,6 +35,6 @@ lint: install-lint-deps
 .PHONY: build run build-img run-img version test lint
 
 generate:
-	rm -rf pb
-	mkdir -p pb
-	protoc --proto_path=api/ --go_out=pb --go-grpc_out=pb api/*.proto
+	rm -rf pb/event
+	mkdir -p pb/event
+	protoc -Iapi/googleapis --proto_path=api/event --go_out=pb/event --go-grpc_out=pb/event api/event/*.proto
