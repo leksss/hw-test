@@ -33,3 +33,8 @@ lint: install-lint-deps
 	golangci-lint run ./...
 
 .PHONY: build run build-img run-img version test lint
+
+generate:
+	rm -rf pb
+	mkdir -p pb
+	protoc --proto_path=api/ --go_out=pb --go-grpc_out=pb api/*.proto

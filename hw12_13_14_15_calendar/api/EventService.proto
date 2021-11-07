@@ -1,7 +1,47 @@
 syntax = "proto3";
 
 package event;
+option go_package = "./;pb";
+
+import "google/protobuf/timestamp.proto";
+
+service EventService {
+  rpc CreateEvent (CreateEventRequest) returns (CreateEventResponse) {}
+}
+
+message CreateEventRequest {
+  Event event = 1;
+}
+
+message CreateEventResponse {
+  bool success = 1;
+  repeated Error errors = 2;
+}
 
 message Event {
-    // TODO
+  // Уникальный идентификатор события UUID
+  string id = 1;
+
+  // ID пользователя, владельца события
+  string ownerID = 2;
+
+  // Заголовок - короткий текст
+  string title = 3;
+
+  // Дата и время начала события
+  google.protobuf.Timestamp startedAt = 4;
+
+  // Дата и время окончания события
+  google.protobuf.Timestamp endedAt = 5;
+
+  // Описание события - длинный текст, опционально
+  string text = 6;
+
+  // За сколько времени высылать уведомление, опционально
+  uint64 notifyFor = 7;
+}
+
+message Error {
+  string code = 1;
+  string msg = 2;
 }
