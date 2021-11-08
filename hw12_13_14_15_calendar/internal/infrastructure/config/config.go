@@ -15,8 +15,8 @@ import (
 
 const (
 	EnvTest = "test"
-	EnvDev  = "dev"  //nolint:deadcode
-	EnvProd = "prod" //nolint:deadcode
+	EnvDev  = "dev"  //nolintlint
+	EnvProd = "prod" //nolintlint
 )
 
 type Config struct {

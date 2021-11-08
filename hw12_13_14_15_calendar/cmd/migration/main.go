@@ -38,12 +38,10 @@ func main() {
 	conf := config.NewConfig(*configFile)
 	err := conf.Parse()
 	if err != nil {
-		log.Fatal(err.Error()) //nolint
+		log.Fatal(err.Error()) //nolintlint
 	}
 	dsn := fmt.Sprintf("%s:%s@/%s?parseTime=true",
 		conf.Database.User, conf.Database.Password, conf.Database.Name)
-
-	command := args[1]
 
 	db, err := goose.OpenDBWithDriver("mysql", dsn)
 	if err != nil {
@@ -61,6 +59,7 @@ func main() {
 		arguments = append(arguments, args[3:]...)
 	}
 
+	command := args[1] //nolint
 	if err := goose.Run(command, db, *dir, arguments...); err != nil {
 		log.Fatalf("goose %v: %v", command, err) //nolint
 	}
