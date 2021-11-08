@@ -2,23 +2,26 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/config"
 	"github.com/pressly/goose/v3"
 )
 
 /*
 @Usage
-$ go run . -dir=./migrations mysql "user:1234@/calendar?parseTime=true" status
-$ go run . -dir=./migrations mysql "user:1234@/calendar?parseTime=true" create init sql
-$ go run . -dir=./migrations mysql "user:1234@/calendar?parseTime=true" up
+$ go run . -dir=./migrations mysql status
+$ go run . -dir=./migrations mysql create init sql
+$ go run . -dir=./migrations mysql up
 */
 
 var (
-	flags = flag.NewFlagSet("goose", flag.ExitOnError)
-	dir   = flags.String("dir", ".", "directory with migration files")
+	flags      = flag.NewFlagSet("goose", flag.ExitOnError)
+	dir        = flags.String("dir", ".", "directory with migration files")
+	configFile = flags.String("conf", "configs/config.yaml", "path to conf file")
 )
 
 func main() {
@@ -30,9 +33,19 @@ func main() {
 		return
 	}
 
-	dbstring, command := args[1], args[2]
+	fmt.Println(args)
 
-	db, err := goose.OpenDBWithDriver("mysql", dbstring)
+	conf := config.NewConfig(*configFile)
+	err := conf.Parse()
+	if err != nil {
+		log.Fatal(err.Error()) //nolint
+	}
+	dsn := fmt.Sprintf("%s:%s@/%s?parseTime=true",
+		conf.Database.User, conf.Database.Password, conf.Database.Name)
+
+	command := args[1]
+
+	db, err := goose.OpenDBWithDriver("mysql", dsn)
 	if err != nil {
 		log.Fatalf("goose: failed to open DB: %v\n", err)
 	}

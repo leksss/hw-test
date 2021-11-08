@@ -32,6 +32,9 @@ install-lint-deps:
 lint: install-lint-deps
 	golangci-lint run ./...
 
+migrate:
+	go run cmd/migration/main.go -dir=./migrations mysql up
+
 .PHONY: build run build-img run-img version test lint
 
 generate:
