@@ -26,7 +26,7 @@ func main() {
 	conf := config.NewConfig(*configFile)
 	err := conf.Parse()
 	if err != nil {
-		log.Fatal(err.Error()) //nolint
+		log.Fatal(err.Error()) //nolintlint
 	}
 
 	flag.Parse()
