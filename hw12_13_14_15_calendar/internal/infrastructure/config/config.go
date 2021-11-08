@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"io/ioutil"
@@ -55,9 +55,13 @@ func (c *Config) Parse() error {
 	return nil
 }
 
+func (c *Config) GetProjectRoot() string {
+	return c.projectRoot
+}
+
 func getProjectRoot() (string, error) {
 	_, filename, _, _ := runtime.Caller(0) // nolint
-	dir := path.Join(path.Dir(filename), "../..")
+	dir := path.Join(path.Dir(filename), "../../..")
 	if err := os.Chdir(dir); err != nil {
 		return "", err
 	}

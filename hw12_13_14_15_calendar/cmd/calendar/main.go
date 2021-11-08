@@ -14,6 +14,7 @@ import (
 
 	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/app"
 	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/domain/interfaces"
+	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/config"
 	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/logger"
 	memory "github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/storage/memory"
 	mysql "github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/storage/sql"
@@ -21,7 +22,12 @@ import (
 )
 
 func main() {
-	configFile := flag.String("config", "configs/config.yaml", "path to config file")
+	configFile := flag.String("config", "configs/config.yaml", "path to conf file")
+	conf := config.NewConfig(*configFile)
+	err := conf.Parse()
+	if err != nil {
+		log.Fatal(err.Error()) //nolint
+	}
 
 	flag.Parse()
 	if flag.Arg(0) == "version" {
@@ -29,22 +35,16 @@ func main() {
 		return
 	}
 
+	logg := logger.New(conf.Logger, conf.GetProjectRoot())
+
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer cancel()
 
-	config := NewConfig(*configFile)
-	err := config.Parse()
-	if err != nil {
-		log.Fatal(err.Error()) //nolint
-	}
-
-	logg := logger.New(config.Logger, config.projectRoot)
-
-	storage := createStorageInstance(ctx, config, logg)
+	storage := createStorageInstance(ctx, conf, logg)
 	defer storage.Close(ctx)
 
 	calendar := app.New(logg, storage)
-	server := internalhttp.NewServer(logg, calendar, config.Server)
+	server := internalhttp.NewServer(logg, calendar, conf.Server)
 
 	go func() {
 		<-ctx.Done()
@@ -65,12 +65,12 @@ func main() {
 	}
 }
 
-func createStorageInstance(ctx context.Context, config Config, logg logger.Log) interfaces.Storage {
+func createStorageInstance(ctx context.Context, conf config.Config, logg logger.Log) interfaces.Storage {
 	var storage interfaces.Storage
-	if config.Env == EnvTest {
+	if conf.Env == config.EnvTest {
 		storage = memory.New()
 	} else {
-		storage = mysql.New(config.Database)
+		storage = mysql.New(conf.Database)
 	}
 
 	if err := storage.Connect(ctx); err != nil {
