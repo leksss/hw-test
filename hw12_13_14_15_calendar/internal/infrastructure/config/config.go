@@ -9,13 +9,13 @@ import (
 
 	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/domain/interfaces"
 	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/logger"
-	internalhttp "github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/server/http"
+	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/server"
 	"gopkg.in/yaml.v2"
 )
 
 const (
 	EnvTest = "test"
-	EnvDev  = "dev"  //nolintlint
+	EnvDev  = "dev"
 	EnvProd = "prod" //nolintlint
 )
 
@@ -24,7 +24,8 @@ type Config struct {
 	projectRoot string
 
 	Env      string                  `yaml:"env"`
-	Server   internalhttp.ServerConf `yaml:"server"`
+	HTTPAddr server.Config           `yaml:"http"`
+	GRPCAddr server.Config           `yaml:"grpc"`
 	Logger   logger.LoggConf         `yaml:"logger"`
 	Database interfaces.DatabaseConf `yaml:"database"`
 }
@@ -57,6 +58,10 @@ func (c *Config) Parse() error {
 
 func (c *Config) GetProjectRoot() string {
 	return c.projectRoot
+}
+
+func (c *Config) IsDebug() bool {
+	return c.Env == EnvDev
 }
 
 func getProjectRoot() (string, error) {

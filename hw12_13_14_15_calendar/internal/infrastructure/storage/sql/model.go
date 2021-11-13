@@ -3,11 +3,11 @@ package sqlstorage
 import "database/sql"
 
 type eventDB struct {
-	ID        string       `db:"id"`
+	ID        string       `db:"uuid"`
 	OwnerID   string       `db:"owner_id"`
 	Title     string       `db:"title"`
 	StartedAt sql.NullTime `db:"started_at"`
 	EndedAt   sql.NullTime `db:"ended_at"`
 	Text      string       `db:"text"`
-	NotifyFor int64        `db:"notify_for"`
+	NotifyFor uint64       `db:"notify_for"`
 }

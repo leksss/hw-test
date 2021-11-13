@@ -38,6 +38,4 @@ migrate:
 .PHONY: build run build-img run-img version test lint
 
 generate:
-	rm -rf pb/event
-	mkdir -p pb/event
-	protoc -Iapi/googleapis --proto_path=api/event --go_out=pb/event --go-grpc_out=pb/event api/event/*.proto
+	go generate ./cmd/calendar

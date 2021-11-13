@@ -1,8 +1,12 @@
 env: dev
 
-server:
+http:
   host: localhost
   port: 8877
+
+grpc:
+  host: localhost
+  port: 8855
 
 logger:
   level: INFO

@@ -8,8 +8,10 @@ import (
 )
 
 type Log interface {
-	Info(msg string)
-	Error(msg string)
+	GetLogger() *zap.Logger
+	Info(msg string, fields ...zap.Field)
+	Warn(msg string, fields ...zap.Field)
+	Error(msg string, fields ...zap.Field)
 }
 
 type Logger struct {
@@ -21,11 +23,17 @@ type LoggConf struct {
 	File  string
 }
 
-func New(config LoggConf, projectRoot string) *Logger {
+func New(config LoggConf, projectRoot string, isDebug bool) *Logger {
 	var zapLevel zapcore.Level
 	zapLevel.Set(config.Level)
 
-	cfg := zap.NewProductionConfig()
+	var cfg zap.Config
+	if isDebug {
+		cfg = zap.NewDevelopmentConfig()
+	} else {
+		cfg = zap.NewProductionConfig()
+	}
+
 	cfg.Level.SetLevel(zapLevel)
 
 	cfg.OutputPaths = []string{
@@ -44,10 +52,18 @@ func New(config LoggConf, projectRoot string) *Logger {
 	}
 }
 
-func (l Logger) Info(msg string) {
-	l.logger.Info(msg)
+func (l Logger) GetLogger() *zap.Logger {
+	return l.logger
 }
 
-func (l Logger) Error(msg string) {
-	l.logger.Error(msg)
+func (l Logger) Info(msg string, fields ...zap.Field) {
+	l.logger.Info(msg, fields...)
+}
+
+func (l Logger) Warn(msg string, fields ...zap.Field) {
+	l.logger.Warn(msg, fields...)
+}
+
+func (l Logger) Error(msg string, fields ...zap.Field) {
+	l.logger.Error(msg, fields...)
 }

@@ -1,4 +1,4 @@
-package internalhttp
+package internalgrpc
 
 import (
 	"net/http"

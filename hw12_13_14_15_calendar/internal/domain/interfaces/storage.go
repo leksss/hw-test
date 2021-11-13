@@ -16,8 +16,8 @@ type DatabaseConf struct {
 type Storage interface {
 	Connect(ctx context.Context) error
 	Close(ctx context.Context) error
-	CreateEvent(ctx context.Context, event entities.Event) (string, error)
-	UpdateEvent(ctx context.Context, id string, event entities.Event) error
-	DeleteEvent(ctx context.Context, id string) error
-	GetEventList(ctx context.Context, params map[string]string) ([]entities.Event, error)
+	CreateEvent(ctx context.Context, event *entities.Event) (string, error)
+	UpdateEvent(ctx context.Context, uuid string, event *entities.Event) (int64, error)
+	DeleteEvent(ctx context.Context, uuid string) error
+	GetEventList(ctx context.Context, filter entities.Filter) ([]*entities.Event, error)
 }

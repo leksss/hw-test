@@ -10,7 +10,7 @@ import (
 
 type Storage struct {
 	mu     sync.RWMutex //nolint
-	events []entities.Event
+	events []*entities.Event
 }
 
 func New() *Storage {
@@ -25,27 +25,29 @@ func (s *Storage) Close(ctx context.Context) error {
 	return nil
 }
 
-func (s *Storage) CreateEvent(ctx context.Context, event entities.Event) (string, error) {
-	uuID := uuid.NewV4()
-	event.ID = uuID.String()
+func (s *Storage) CreateEvent(ctx context.Context, event *entities.Event) (string, error) {
+	UUID := uuid.NewV4()
+	event.UUID = UUID.String()
 	s.events = append(s.events, event)
-	return uuID.String(), nil
+	return UUID.String(), nil
 }
 
-func (s *Storage) UpdateEvent(ctx context.Context, id string, event entities.Event) error {
+func (s *Storage) UpdateEvent(ctx context.Context, uuid string, event *entities.Event) (int64, error) {
+	rowsCnt := int64(0)
 	for i, e := range s.events {
-		if e.ID == id {
-			event.ID = id
+		if e.UUID == uuid {
+			event.UUID = uuid
 			s.events[i] = event
+			rowsCnt++
 			break
 		}
 	}
-	return nil
+	return rowsCnt, nil
 }
 
-func (s *Storage) DeleteEvent(ctx context.Context, id string) error {
+func (s *Storage) DeleteEvent(ctx context.Context, uuid string) error {
 	for i, e := range s.events {
-		if e.ID == id {
+		if e.UUID == uuid {
 			s.events = append(s.events[:i], s.events[i+1:]...)
 			break
 		}
@@ -53,6 +55,6 @@ func (s *Storage) DeleteEvent(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *Storage) GetEventList(ctx context.Context, params map[string]string) ([]entities.Event, error) {
+func (s *Storage) GetEventList(ctx context.Context, filter entities.Filter) ([]*entities.Event, error) {
 	return s.events, nil
 }

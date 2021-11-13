@@ -4,6 +4,7 @@ package pb
 
 import (
 	context "context"
+
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -34,7 +35,7 @@ func NewEventServiceClient(cc grpc.ClientConnInterface) EventServiceClient {
 
 func (c *eventServiceClient) CreateEvent(ctx context.Context, in *CreateEventRequest, opts ...grpc.CallOption) (*CreateEventResponse, error) {
 	out := new(CreateEventResponse)
-	err := c.cc.Invoke(ctx, "/event.EventService/CreateEvent", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/event.eventService/CreateEvent", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +44,7 @@ func (c *eventServiceClient) CreateEvent(ctx context.Context, in *CreateEventReq
 
 func (c *eventServiceClient) UpdateEvent(ctx context.Context, in *UpdateEventRequest, opts ...grpc.CallOption) (*UpdateEventResponse, error) {
 	out := new(UpdateEventResponse)
-	err := c.cc.Invoke(ctx, "/event.EventService/UpdateEvent", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/event.eventService/UpdateEvent", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +53,7 @@ func (c *eventServiceClient) UpdateEvent(ctx context.Context, in *UpdateEventReq
 
 func (c *eventServiceClient) DeleteEvent(ctx context.Context, in *DeleteEventRequest, opts ...grpc.CallOption) (*DeleteEventResponse, error) {
 	out := new(DeleteEventResponse)
-	err := c.cc.Invoke(ctx, "/event.EventService/DeleteEvent", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/event.eventService/DeleteEvent", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +62,7 @@ func (c *eventServiceClient) DeleteEvent(ctx context.Context, in *DeleteEventReq
 
 func (c *eventServiceClient) GetEventList(ctx context.Context, in *GetEventListRequest, opts ...grpc.CallOption) (*GetEventListEventResponse, error) {
 	out := new(GetEventListEventResponse)
-	err := c.cc.Invoke(ctx, "/event.EventService/GetEventList", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/event.eventService/GetEventList", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +119,7 @@ func _EventService_CreateEvent_Handler(srv interface{}, ctx context.Context, dec
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/event.EventService/CreateEvent",
+		FullMethod: "/event.eventService/CreateEvent",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(EventServiceServer).CreateEvent(ctx, req.(*CreateEventRequest))
@@ -136,7 +137,7 @@ func _EventService_UpdateEvent_Handler(srv interface{}, ctx context.Context, dec
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/event.EventService/UpdateEvent",
+		FullMethod: "/event.eventService/UpdateEvent",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(EventServiceServer).UpdateEvent(ctx, req.(*UpdateEventRequest))
@@ -154,7 +155,7 @@ func _EventService_DeleteEvent_Handler(srv interface{}, ctx context.Context, dec
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/event.EventService/DeleteEvent",
+		FullMethod: "/event.eventService/DeleteEvent",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(EventServiceServer).DeleteEvent(ctx, req.(*DeleteEventRequest))
@@ -172,7 +173,7 @@ func _EventService_GetEventList_Handler(srv interface{}, ctx context.Context, de
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/event.EventService/GetEventList",
+		FullMethod: "/event.eventService/GetEventList",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(EventServiceServer).GetEventList(ctx, req.(*GetEventListRequest))
@@ -184,7 +185,7 @@ func _EventService_GetEventList_Handler(srv interface{}, ctx context.Context, de
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var EventService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "event.EventService",
+	ServiceName: "event.eventService",
 	HandlerType: (*EventServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

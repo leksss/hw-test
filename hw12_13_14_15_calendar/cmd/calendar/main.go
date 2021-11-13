@@ -2,11 +2,9 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -18,7 +16,16 @@ import (
 	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/logger"
 	memory "github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/storage/memory"
 	mysql "github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/storage/sql"
-	internalhttp "github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/server/http"
+	grpc "github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/server/grpc"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
+)
+
+//go:generate ./proto_generator.sh
+
+const (
+	appShutdownMessage      = "calendar exits"
+	gracefulShutdownTimeout = 3 * time.Second
 )
 
 func main() {
@@ -35,7 +42,7 @@ func main() {
 		return
 	}
 
-	logg := logger.New(conf.Logger, conf.GetProjectRoot())
+	logg := logger.New(conf.Logger, conf.GetProjectRoot(), conf.IsDebug())
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer cancel()
@@ -44,24 +51,55 @@ func main() {
 	defer storage.Close(ctx)
 
 	calendar := app.New(logg, storage)
-	server := internalhttp.NewServer(logg, calendar, conf.Server)
+	server := grpc.NewServer(logg, calendar, conf)
+
+	errs := make(chan error)
 
 	go func() {
-		<-ctx.Done()
-
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
-		defer cancel()
-
-		if err := server.Stop(ctx); err != nil {
-			logg.Error("failed to stop http server: " + err.Error())
-		}
+		errs <- server.StartGRPC()
 	}()
 
-	logg.Info(fmt.Sprintf("calendar is running on %s", server.GetServerAddr()))
-	if err := server.Start(); errors.Is(err, http.ErrServerClosed) {
-		logg.Error("failed to start http server: " + err.Error())
-		cancel()
-		os.Exit(1) //nolintlint
+	go func() {
+		errs <- server.StartHTTPProxy()
+	}()
+
+	go func() {
+		quit := make(chan os.Signal, 1)
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
+		sig := <-quit
+
+		logg.Warn("os signal received, beginning graceful shutdown with timeout",
+			zap.String("signal", sig.String()),
+			zap.Duration("timeout", gracefulShutdownTimeout),
+		)
+
+		success := make(chan string)
+		go func() {
+			errs <- server.StopHTTPProxy(context.Background())
+			success <- "HTTP server successfully stopped"
+		}()
+		go func() {
+			server.StopGRPC()
+			success <- "gRPC server successfully stopped"
+		}()
+		go func() {
+			time.Sleep(gracefulShutdownTimeout)
+			logg.Error("failed to gracefully shut down server within timeout. Shutting down with Fatal",
+				zap.Duration("timeout", gracefulShutdownTimeout))
+		}()
+		logg.Info(<-success)
+		logg.Info(<-success)
+		errs <- errors.New(appShutdownMessage)
+	}()
+
+	for err := range errs {
+		if err == nil {
+			continue
+		}
+		logg.Warn("shutdown err message", zap.Error(err))
+		if err.Error() == appShutdownMessage {
+			return
+		}
 	}
 }
 
@@ -70,7 +108,7 @@ func createStorageInstance(ctx context.Context, conf config.Config, logg logger.
 	if conf.Env == config.EnvTest {
 		storage = memory.New()
 	} else {
-		storage = mysql.New(conf.Database)
+		storage = mysql.New(conf.Database, logg)
 	}
 
 	if err := storage.Connect(ctx); err != nil {

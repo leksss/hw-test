@@ -10,18 +10,19 @@ import (
 
 func TestStorage(t *testing.T) {
 	storage := New()
-	eventID, err := storage.CreateEvent(context.Background(), entities.Event{
+	eventID, err := storage.CreateEvent(context.Background(), &entities.Event{
 		Title: "Тестовое событие",
 	})
 	require.NoError(t, err)
 	require.Equal(t, 36, len(eventID))
 
-	err = storage.UpdateEvent(context.Background(), eventID, entities.Event{
+	rowsCnt, err := storage.UpdateEvent(context.Background(), eventID, &entities.Event{
 		Title: "Тестовое событие UPDATED",
 	})
 	require.NoError(t, err)
+	require.Equal(t, int64(1), rowsCnt)
 
-	events, err := storage.GetEventList(context.Background(), map[string]string{})
+	events, err := storage.GetEventList(context.Background(), entities.Filter{})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(events))
 	require.Equal(t, "Тестовое событие UPDATED", events[0].Title)
@@ -29,7 +30,7 @@ func TestStorage(t *testing.T) {
 	err = storage.DeleteEvent(context.Background(), eventID)
 	require.NoError(t, err)
 
-	events, err = storage.GetEventList(context.Background(), map[string]string{})
+	events, err = storage.GetEventList(context.Background(), entities.Filter{})
 	require.NoError(t, err)
 	require.Equal(t, 0, len(events))
 }
