@@ -7,18 +7,18 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/app"
+	"github.com/jmoiron/sqlx"
 	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/domain/interfaces"
 	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/config"
 	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/logger"
 	memory "github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/storage/memory"
 	mysql "github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/storage/sql"
 	internalhttp "github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/server/http"
+	"go.uber.org/zap"
 )
 
 func main() {
@@ -35,16 +35,34 @@ func main() {
 		return
 	}
 
-	logg := logger.New(conf.Logger, conf.GetProjectRoot())
+	var zapConfig zap.Config
+	if conf.IsDebug() {
+		zapConfig = zap.NewDevelopmentConfig()
+	} else {
+		zapConfig = zap.NewProductionConfig()
+	}
+
+	logg := logger.New(zapConfig, conf.Logger, conf.GetProjectRoot())
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer cancel()
 
-	storage := createStorageInstance(ctx, conf, logg)
-	defer storage.Close(ctx)
+	var storage interfaces.Storage
+	if conf.Env == config.EnvTest {
+		storage = memory.New()
+	} else {
+		dsn := fmt.Sprintf("%s:%s@(%s:3306)/%s", conf.Database.User, conf.Database.Password, conf.Database.Host, conf.Database.Name)
+		db, err := sqlx.ConnectContext(ctx, "mysql", dsn)
+		if err != nil {
+			logg.Error(fmt.Sprintf("Connect to storage failed: %s", err.Error()))
+		}
+		storage = mysql.New(conf.Database, db)
+		defer db.Close()
+	}
 
-	calendar := app.New(logg, storage)
-	server := internalhttp.NewServer(logg, calendar, conf.Server)
+	_ = storage
+
+	server := internalhttp.NewServer(logg, conf.Server)
 
 	go func() {
 		<-ctx.Done()
@@ -61,20 +79,5 @@ func main() {
 	if err := server.Start(); errors.Is(err, http.ErrServerClosed) {
 		logg.Error("failed to start http server: " + err.Error())
 		cancel()
-		os.Exit(1) //nolintlint
 	}
-}
-
-func createStorageInstance(ctx context.Context, conf config.Config, logg logger.Log) interfaces.Storage {
-	var storage interfaces.Storage
-	if conf.Env == config.EnvTest {
-		storage = memory.New()
-	} else {
-		storage = mysql.New(conf.Database)
-	}
-
-	if err := storage.Connect(ctx); err != nil {
-		logg.Error(fmt.Sprintf("Connect to storage failed: %s", err.Error()))
-	}
-	return storage
 }

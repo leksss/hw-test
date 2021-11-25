@@ -5,54 +5,64 @@ import (
 	"sync"
 
 	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/domain/entities"
+	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/domain/errors"
 	uuid "github.com/satori/go.uuid"
 )
 
 type Storage struct {
-	mu     sync.RWMutex //nolint
-	events []entities.Event
+	mu        sync.RWMutex
+	eventsMap map[string]entities.Event
 }
 
 func New() *Storage {
-	return &Storage{}
-}
-
-func (s *Storage) Connect(ctx context.Context) error {
-	return nil
-}
-
-func (s *Storage) Close(ctx context.Context) error {
-	return nil
+	return &Storage{
+		eventsMap: make(map[string]entities.Event),
+	}
 }
 
 func (s *Storage) CreateEvent(ctx context.Context, event entities.Event) (string, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	uuID := uuid.NewV4()
 	event.ID = uuID.String()
-	s.events = append(s.events, event)
+	s.eventsMap[uuID.String()] = event
+
 	return uuID.String(), nil
 }
 
-func (s *Storage) UpdateEvent(ctx context.Context, id string, event entities.Event) error {
-	for i, e := range s.events {
-		if e.ID == id {
-			event.ID = id
-			s.events[i] = event
-			break
-		}
+func (s *Storage) UpdateEvent(ctx context.Context, eventID string, event entities.Event) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, ok := s.eventsMap[eventID]; ok {
+		event.ID = eventID
+		s.eventsMap[eventID] = event
+	} else {
+		return errors.ErrNoEventFound
 	}
 	return nil
 }
 
-func (s *Storage) DeleteEvent(ctx context.Context, id string) error {
-	for i, e := range s.events {
-		if e.ID == id {
-			s.events = append(s.events[:i], s.events[i+1:]...)
-			break
-		}
+func (s *Storage) DeleteEvent(ctx context.Context, eventID string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, ok := s.eventsMap[eventID]; ok {
+		delete(s.eventsMap, eventID)
+	} else {
+		return errors.ErrNoEventFound
 	}
 	return nil
 }
 
-func (s *Storage) GetEventList(ctx context.Context, params map[string]string) ([]entities.Event, error) {
-	return s.events, nil
+func (s *Storage) GetEventList(ctx context.Context, limit, offset int64) ([]entities.Event, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	events := make([]entities.Event, 0)
+	for _, event := range s.eventsMap {
+		events = append(events, event)
+	}
+	return events, nil
 }

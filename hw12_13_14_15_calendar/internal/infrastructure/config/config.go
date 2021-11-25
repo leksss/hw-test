@@ -15,8 +15,7 @@ import (
 
 const (
 	EnvTest = "test"
-	EnvDev  = "dev"  //nolintlint
-	EnvProd = "prod" //nolintlint
+	EnvDev  = "dev"
 )
 
 type Config struct {
@@ -41,7 +40,7 @@ func (c *Config) Parse() error {
 		log.Fatal(err.Error())
 	}
 
-	configYml, err := ioutil.ReadFile(projectRoot + "/" + c.configFile)
+	configYml, err := ioutil.ReadFile(path.Join(projectRoot, c.configFile))
 	if err != nil {
 		return err
 	}
@@ -57,6 +56,10 @@ func (c *Config) Parse() error {
 
 func (c *Config) GetProjectRoot() string {
 	return c.projectRoot
+}
+
+func (c *Config) IsDebug() bool {
+	return c.Env == EnvDev
 }
 
 func getProjectRoot() (string, error) {

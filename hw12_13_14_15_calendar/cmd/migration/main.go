@@ -33,8 +33,6 @@ func main() {
 		return
 	}
 
-	fmt.Println(args)
-
 	conf := config.NewConfig(*configFile)
 	err := conf.Parse()
 	if err != nil {
@@ -54,7 +52,7 @@ func main() {
 		}
 	}()
 
-	arguments := []string{}
+	var arguments []string
 	if len(args) > 3 {
 		arguments = append(arguments, args[3:]...)
 	}

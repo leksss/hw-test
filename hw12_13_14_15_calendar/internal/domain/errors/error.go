@@ -1,9 +1,9 @@
 package errors
 
-var ErrDateBusy = EventError("another event exists for this date")
+import "errors"
 
-type EventError string
-
-func (ee EventError) Error() string {
-	return string(ee)
-}
+var (
+	ErrDateBusy        = errors.New("another event exists for this date")
+	ErrNoAffectedEvent = errors.New("no affected event")
+	ErrNoEventFound    = errors.New("no event found")
+)

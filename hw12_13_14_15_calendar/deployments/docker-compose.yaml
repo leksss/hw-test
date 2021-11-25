@@ -4,14 +4,11 @@ services:
   db:
     image: mysql:8.0.21
     container_name: calendar_db
-    volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    restart: always
     environment:
       MYSQL_DATABASE: 'calendar'
       MYSQL_USER: 'user'
-      MYSQL_PASSWORD: '1234'
-      MYSQL_ROOT_PASSWORD: '1234'
+      MYSQL_PASSWORD: 'D3cdF3z7Du90n1Sq'
+      MYSQL_ROOT_PASSWORD: 'EBEnjUWoh205ZSjs'
     ports:
       - '3306:3306'
     expose:

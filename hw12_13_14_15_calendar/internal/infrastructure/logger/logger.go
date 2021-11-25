@@ -2,14 +2,17 @@ package logger
 
 import (
 	"log"
+	"path"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
 type Log interface {
-	Info(msg string)
-	Error(msg string)
+	Info(msg string, fields ...zap.Field)
+	Warn(msg string, fields ...zap.Field)
+	Error(msg string, fields ...zap.Field)
+	Debug(msg string, fields ...zap.Field)
 }
 
 type Logger struct {
@@ -21,19 +24,15 @@ type LoggConf struct {
 	File  string
 }
 
-func New(config LoggConf, projectRoot string) *Logger {
+func New(zapConfig zap.Config, config LoggConf, projectRoot string) *Logger {
 	var zapLevel zapcore.Level
 	zapLevel.Set(config.Level)
-
-	cfg := zap.NewProductionConfig()
-	cfg.Level.SetLevel(zapLevel)
-
-	cfg.OutputPaths = []string{
+	zapConfig.Level.SetLevel(zapLevel)
+	zapConfig.OutputPaths = []string{
 		"stdout",
-		projectRoot + "/" + config.File,
+		path.Join(projectRoot, config.File),
 	}
-
-	logger, err := cfg.Build(zap.AddCallerSkip(1))
+	logger, err := zapConfig.Build(zap.AddCallerSkip(1))
 	if err != nil {
 		log.Fatalf("can't initialize logger logger: %v", err)
 	}
@@ -44,10 +43,18 @@ func New(config LoggConf, projectRoot string) *Logger {
 	}
 }
 
-func (l Logger) Info(msg string) {
-	l.logger.Info(msg)
+func (l Logger) Info(msg string, fields ...zap.Field) {
+	l.logger.Info(msg, fields...)
 }
 
-func (l Logger) Error(msg string) {
-	l.logger.Error(msg)
+func (l Logger) Warn(msg string, fields ...zap.Field) {
+	l.logger.Warn(msg, fields...)
+}
+
+func (l Logger) Error(msg string, fields ...zap.Field) {
+	l.logger.Error(msg, fields...)
+}
+
+func (l Logger) Debug(msg string, fields ...zap.Field) {
+	l.logger.Debug(msg, fields...)
 }
