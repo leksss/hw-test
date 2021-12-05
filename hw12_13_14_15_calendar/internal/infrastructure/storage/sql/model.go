@@ -3,7 +3,7 @@ package sqlstorage
 import "database/sql"
 
 type eventDB struct {
-	ID        string       `db:"uuid"`
+	ID        string       `db:"id"`
 	OwnerID   string       `db:"owner_id"`
 	Title     string       `db:"title"`
 	StartedAt sql.NullTime `db:"started_at"`

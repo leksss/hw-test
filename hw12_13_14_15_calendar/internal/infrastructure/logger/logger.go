@@ -8,8 +8,6 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-
-
 type Logger struct {
 	logger *zap.Logger
 }

@@ -28,9 +28,9 @@ func NewServer(log interfaces.Log, config *config.Config, storage interfaces.Sto
 	return &Server{
 		log:      log,
 		storage:  storage,
-		grpcAddr: fmt.Sprintf("%s:%s", config.GRPCAddr.Host, config.GRPCAddr.Port),
+		grpcAddr: config.GRPCAddr.DSN(),
 		http: &http.Server{
-			Addr: fmt.Sprintf("%s:%s", config.HTTPAddr.Host, config.HTTPAddr.Port),
+			Addr: config.HTTPAddr.DSN(),
 		},
 	}
 }

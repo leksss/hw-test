@@ -7,8 +7,8 @@ import (
 	"path"
 	"runtime"
 
-	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/domain/interfaces"
 	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/logger"
+	sqlstorage "github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/storage/sql"
 	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/server"
 	"gopkg.in/yaml.v2"
 )
@@ -26,7 +26,7 @@ type Config struct {
 	HTTPAddr server.Config           `yaml:"http"`
 	GRPCAddr server.Config           `yaml:"grpc"`
 	Logger   logger.LoggConf         `yaml:"logger"`
-	Database interfaces.DatabaseConf `yaml:"database"`
+	Database sqlstorage.DatabaseConf `yaml:"database"`
 }
 
 func NewConfig(configFile string) *Config {

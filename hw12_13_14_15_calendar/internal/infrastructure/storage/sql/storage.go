@@ -13,7 +13,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-const DefaultLimit = 20
+const DefaultListLimit = 20
 
 type Storage struct {
 	db  *sqlx.DB
@@ -33,7 +33,7 @@ func (s *Storage) CreateEvent(ctx context.Context, event entities.Event) (string
 	}
 
 	uuID := uuid.NewV4()
-	sql := `INSERT INTO event (event_id, owner_id, title, started_at, ended_at, text, notify_for) 
+	sql := `INSERT INTO event (id, owner_id, title, started_at, ended_at, text, notify_for) 
 			VALUES (:EventID, :OwnerID, :Title, :StartedAt, :EndedAt, :Text, :NotifyFor)`
 	arg := map[string]interface{}{
 		"EventID":   uuID.String(),
@@ -58,21 +58,21 @@ func (s *Storage) UpdateEvent(ctx context.Context, eventID string, event entitie
 	}
 
 	sql := `UPDATE event SET 
-                 owner_id=:ownerID, 
-                 title=:title, 
-                 started_at=:startedAt, 
-                 ended_at=:endedAt, 
-                 text=:text, 
-                 notify_for=:notifyFor 
-			WHERE uuid=:uuid`
+                 owner_id=:OwnerID, 
+                 title=:Title, 
+                 started_at=:StartedAt, 
+                 ended_at=:EndedAt, 
+                 text=:Text, 
+                 notify_for=:NotifyFor 
+			WHERE id=:EventID`
 	arg := map[string]interface{}{
-		"ownerID":   event.OwnerID,
-		"title":     event.Title,
-		"startedAt": event.StartedAt,
-		"endedAt":   event.EndedAt,
-		"text":      event.Text,
-		"notifyFor": event.NotifyFor,
-		"uuid":      eventID,
+		"OwnerID":   event.OwnerID,
+		"Title":     event.Title,
+		"StartedAt": event.StartedAt,
+		"EndedAt":   event.EndedAt,
+		"Text":      event.Text,
+		"NotifyFor": event.NotifyFor,
+		"EventID":   eventID,
 	}
 	_, err := s.db.NamedExecContext(ctx, sql, arg)
 	s.logQuery(sql, arg)
@@ -101,7 +101,7 @@ func (s *Storage) DeleteEvent(ctx context.Context, eventID string) error {
 
 func (s *Storage) GetEventList(ctx context.Context, filter entities.EventListFilter) ([]*entities.Event, error) {
 	if filter.Limit == 0 {
-		filter.Limit = DefaultLimit
+		filter.Limit = DefaultListLimit
 	}
 
 	var sql string
@@ -134,12 +134,15 @@ func (s *Storage) GetEventList(ctx context.Context, filter entities.EventListFil
 			return nil, err
 		}
 
+		startedAt := event.StartedAt.Time
+		endedAt := event.EndedAt.Time
+
 		events = append(events, &entities.Event{
 			EventID:   event.ID,
 			OwnerID:   event.OwnerID,
 			Title:     event.Title,
-			StartedAt: &event.StartedAt.Time,
-			EndedAt:   &event.EndedAt.Time,
+			StartedAt: &startedAt,
+			EndedAt:   &endedAt,
 			Text:      event.Text,
 			NotifyFor: event.NotifyFor,
 		})
@@ -149,22 +152,34 @@ func (s *Storage) GetEventList(ctx context.Context, filter entities.EventListFil
 
 func (s *Storage) getEventByID(ctx context.Context, eventID string) (*entities.Event, error) {
 	sql := `SELECT * FROM event	WHERE id=:EventID`
-	rows, err := s.db.NamedQueryContext(ctx, sql, map[string]interface{}{
+	arg := map[string]interface{}{
 		"EventID": eventID,
-	})
+	}
+	rows, err := s.db.NamedQueryContext(ctx, sql, arg)
+	s.logQuery(sql, arg)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-
-	var event *entities.Event
-	if rows.Next() {
-		err = rows.StructScan(&event)
-		if err != nil {
-			return nil, err
-		}
+	if !rows.Next() {
+		return nil, nil
 	}
-	return event, nil
+
+	var eventDB eventDB
+	err = rows.StructScan(&eventDB)
+	if err != nil {
+		return nil, err
+	}
+
+	return &entities.Event{
+		EventID:   eventDB.ID,
+		OwnerID:   eventDB.OwnerID,
+		Title:     eventDB.Title,
+		StartedAt: &eventDB.StartedAt.Time,
+		EndedAt:   &eventDB.EndedAt.Time,
+		Text:      eventDB.Text,
+		NotifyFor: eventDB.NotifyFor,
+	}, nil
 }
 
 func (s *Storage) isTimeForEventAvailable(ctx context.Context, eventID string, event entities.Event) error {
@@ -172,25 +187,27 @@ func (s *Storage) isTimeForEventAvailable(ctx context.Context, eventID string, e
 			WHERE id!=:EventID AND owner_id=:OwnerID AND 
 				(:StartedAt BETWEEN started_at AND ended_at OR started_at BETWEEN :StartedAt AND :EndedAt)
 			LIMIT 1`
-	rows, err := s.db.NamedQueryContext(ctx, sql, map[string]interface{}{
+	arg := map[string]interface{}{
 		"OwnerID":   event.OwnerID,
 		"StartedAt": event.StartedAt,
 		"EndedAt":   event.EndedAt,
 		"EventID":   eventID,
-	})
+	}
+	rows, err := s.db.NamedQueryContext(ctx, sql, arg)
+	s.logQuery(sql, arg)
 	if err != nil {
 		return err
 	}
 	defer rows.Close()
 
-	var rowEventID int64
+	var rowEventID string
 	if rows.Next() {
 		err = rows.Scan(&rowEventID)
 		if err != nil {
 			return err
 		}
 	}
-	if rowEventID > 0 {
+	if rowEventID != "" {
 		return errors.ErrDateBusy
 	}
 	return nil

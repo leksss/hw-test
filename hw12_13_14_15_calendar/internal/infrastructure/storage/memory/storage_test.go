@@ -5,12 +5,11 @@ import (
 	"testing"
 
 	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/domain/entities"
-	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/domain/interfaces"
 	"github.com/stretchr/testify/require"
 )
 
 func TestStorage(t *testing.T) {
-	events := []entities.Event{
+	events := []*entities.Event{
 		{
 			OwnerID: "327bae0a-8383-4323-93c4-f0501b8380cd",
 			Title:   "Тестовое событие 1",
@@ -25,7 +24,7 @@ func TestStorage(t *testing.T) {
 
 	eventIDs := make([]string, 0)
 	for _, e := range events {
-		eventID, err := storage.CreateEvent(context.Background(), e)
+		eventID, err := storage.CreateEvent(context.Background(), *e)
 		require.NoError(t, err)
 		require.Equal(t, 36, len(eventID))
 		eventIDs = append(eventIDs, eventID)
@@ -38,7 +37,7 @@ func TestStorage(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	events, err := storage.GetEventList(context.Background(), interfaces.EventListLimit, 0)
+	events, err := storage.GetEventList(context.Background(), entities.EventListFilter{})
 	require.Equal(t, 2, len(events))
 	for _, event := range events {
 		require.NoError(t, err)
@@ -50,7 +49,7 @@ func TestStorage(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	events, err = storage.GetEventList(context.Background(), interfaces.EventListLimit, 0)
+	events, err = storage.GetEventList(context.Background(), entities.EventListFilter{})
 	require.NoError(t, err)
 	require.Equal(t, 0, len(events))
 }

@@ -10,7 +10,4 @@ var (
 	ErrEventStartedAtIsRequired = errors.New("startedAt is required")
 	ErrEventEndedAtIsRequired   = errors.New("endedAt is required")
 	ErrEventIDIsRequired        = errors.New("EventID is required")
-
-	//ErrEventNotFound   = errors.New("event not found")
-	//ErrNoAffectedEvent = errors.New("no affected event")
 )

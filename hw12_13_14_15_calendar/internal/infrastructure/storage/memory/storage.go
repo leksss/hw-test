@@ -62,7 +62,8 @@ func (s *Storage) GetEventList(ctx context.Context, filter entities.EventListFil
 
 	events := make([]*entities.Event, 0)
 	for _, event := range s.eventsMap {
-		events = append(events, &event)
+		e := event
+		events = append(events, &e)
 	}
 	return events, nil
 }

@@ -29,16 +29,16 @@ const (
 
 func main() {
 	configFile := flag.String("config", "configs/config.yaml", "path to conf file")
-	conf := config.NewConfig(*configFile)
-	err := conf.Parse()
-	if err != nil {
-		log.Fatal(err.Error()) //nolintlint
-	}
-
 	flag.Parse()
 	if flag.Arg(0) == "version" {
 		printVersion()
 		return
+	}
+
+	conf := config.NewConfig(*configFile)
+	err := conf.Parse()
+	if err != nil {
+		log.Fatal(err.Error()) //nolintlint
 	}
 
 	var zapConfig zap.Config
@@ -57,8 +57,7 @@ func main() {
 	if conf.Env == config.EnvTest {
 		storage = memory.New()
 	} else {
-		dsn := fmt.Sprintf("%s:%s@(%s:3306)/%s", conf.Database.User, conf.Database.Password, conf.Database.Host, conf.Database.Name)
-		db, err := sqlx.ConnectContext(ctx, "mysql", dsn)
+		db, err := sqlx.ConnectContext(ctx, "mysql", conf.Database.DSN())
 		if err != nil {
 			logg.Error(fmt.Sprintf("Connect to storage failed: %s", err.Error()))
 		}
