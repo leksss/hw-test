@@ -13,11 +13,11 @@ message CreateEventRequest {
 message CreateEventResponse {
   bool success = 1;
   repeated Error errors = 2;
-  string UUID = 3;
+  string eventID = 3;
 }
 
 message UpdateEventRequest {
-  string UUID = 1;
+  string eventID = 1;
   Event event = 2;
 }
 
@@ -27,7 +27,7 @@ message UpdateEventResponse {
 }
 
 message DeleteEventRequest {
-  string UUID = 1;
+  string eventID = 1;
 }
 
 message DeleteEventResponse {
@@ -38,7 +38,7 @@ message DeleteEventResponse {
 message GetEventListRequest {
   int64 limit = 1;
   int64 offset = 2;
-  string UUID = 3;
+  string eventID = 3;
 }
 
 message GetEventListEventResponse {
@@ -49,7 +49,7 @@ message GetEventListEventResponse {
 
 message Event {
   // Уникальный идентификатор события UUID
-  string UUID = 1;
+  string eventID = 1;
 
   // ID пользователя, владельца события
   string ownerID = 2;

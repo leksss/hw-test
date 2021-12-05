@@ -6,6 +6,8 @@ import (
 	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/domain/entities"
 )
 
+const EventListLimit = 20
+
 type DatabaseConf struct {
 	Host     string
 	User     string
@@ -14,10 +16,8 @@ type DatabaseConf struct {
 }
 
 type Storage interface {
-	Connect(ctx context.Context) error
-	Close(ctx context.Context) error
-	CreateEvent(ctx context.Context, event *entities.Event) (string, error)
-	UpdateEvent(ctx context.Context, uuid string, event *entities.Event) (int64, error)
-	DeleteEvent(ctx context.Context, uuid string) error
-	GetEventList(ctx context.Context, filter entities.Filter) ([]*entities.Event, error)
+	CreateEvent(ctx context.Context, event entities.Event) (string, error)
+	UpdateEvent(ctx context.Context, eventID string, event entities.Event) error
+	DeleteEvent(ctx context.Context, eventID string) error
+	GetEventList(ctx context.Context, filter entities.EventListFilter) ([]*entities.Event, error)
 }

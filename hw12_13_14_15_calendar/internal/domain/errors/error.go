@@ -1,16 +1,16 @@
 package errors
 
-type EventError string
+import "errors"
 
 var (
-	ErrEventOwnerIDIsRequired   = EventError("ownerID is required")
-	ErrEventTitleIsRequired     = EventError("title is required")
-	ErrEventStartedAtIsRequired = EventError("startedAt is required")
-	ErrEventEndedAtIsRequired   = EventError("endedAt is required")
-	ErrEventUUIDIsRequired      = EventError("UUID is required")
-	ErrEventNotFound            = EventError("Event not found")
-)
+	ErrDateBusy                 = errors.New("another event exists for this date")
+	ErrNoEventFound             = errors.New("no event found")
+	ErrEventOwnerIDIsRequired   = errors.New("ownerID is required")
+	ErrEventTitleIsRequired     = errors.New("title is required")
+	ErrEventStartedAtIsRequired = errors.New("startedAt is required")
+	ErrEventEndedAtIsRequired   = errors.New("endedAt is required")
+	ErrEventIDIsRequired        = errors.New("EventID is required")
 
-func (ee EventError) Error() string {
-	return string(ee)
-}
+	//ErrEventNotFound   = errors.New("event not found")
+	//ErrNoAffectedEvent = errors.New("no affected event")
+)

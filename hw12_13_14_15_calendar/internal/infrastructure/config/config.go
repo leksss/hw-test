@@ -16,7 +16,6 @@ import (
 const (
 	EnvTest = "test"
 	EnvDev  = "dev"
-	EnvProd = "prod" //nolintlint
 )
 
 type Config struct {
@@ -30,8 +29,8 @@ type Config struct {
 	Database interfaces.DatabaseConf `yaml:"database"`
 }
 
-func NewConfig(configFile string) Config {
-	return Config{
+func NewConfig(configFile string) *Config {
+	return &Config{
 		configFile: configFile,
 	}
 }
@@ -42,7 +41,7 @@ func (c *Config) Parse() error {
 		log.Fatal(err.Error())
 	}
 
-	configYml, err := ioutil.ReadFile(projectRoot + "/" + c.configFile)
+	configYml, err := ioutil.ReadFile(path.Join(projectRoot, c.configFile))
 	if err != nil {
 		return err
 	}

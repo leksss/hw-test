@@ -5,12 +5,11 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/app"
+	"github.com/jmoiron/sqlx"
 	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/domain/interfaces"
 	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/config"
 	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/logger"
@@ -42,17 +41,32 @@ func main() {
 		return
 	}
 
-	logg := logger.New(conf.Logger, conf.GetProjectRoot(), conf.IsDebug())
+	var zapConfig zap.Config
+	if conf.IsDebug() {
+		zapConfig = zap.NewDevelopmentConfig()
+	} else {
+		zapConfig = zap.NewProductionConfig()
+	}
+
+	logg := logger.New(zapConfig, conf.Logger, conf.GetProjectRoot())
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer cancel()
 
-	storage := createStorageInstance(ctx, conf, logg)
-	defer storage.Close(ctx)
+	var storage interfaces.Storage
+	if conf.Env == config.EnvTest {
+		storage = memory.New()
+	} else {
+		dsn := fmt.Sprintf("%s:%s@(%s:3306)/%s", conf.Database.User, conf.Database.Password, conf.Database.Host, conf.Database.Name)
+		db, err := sqlx.ConnectContext(ctx, "mysql", dsn)
+		if err != nil {
+			logg.Error(fmt.Sprintf("Connect to storage failed: %s", err.Error()))
+		}
+		storage = mysql.New(db, logg)
+		defer db.Close()
+	}
 
-	calendar := app.New(logg, storage)
-	server := grpc.NewServer(logg, calendar, conf)
-
+	server := grpc.NewServer(logg, conf, storage)
 	errs := make(chan error)
 
 	go func() {
@@ -60,18 +74,12 @@ func main() {
 	}()
 
 	go func() {
+		time.Sleep(500 * time.Millisecond)
 		errs <- server.StartHTTPProxy()
 	}()
 
 	go func() {
-		quit := make(chan os.Signal, 1)
-		signal.Notify(quit, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
-		sig := <-quit
-
-		logg.Warn("os signal received, beginning graceful shutdown with timeout",
-			zap.String("signal", sig.String()),
-			zap.Duration("timeout", gracefulShutdownTimeout),
-		)
+		<-ctx.Done()
 
 		success := make(chan string)
 		go func() {
@@ -101,18 +109,4 @@ func main() {
 			return
 		}
 	}
-}
-
-func createStorageInstance(ctx context.Context, conf config.Config, logg logger.Log) interfaces.Storage {
-	var storage interfaces.Storage
-	if conf.Env == config.EnvTest {
-		storage = memory.New()
-	} else {
-		storage = mysql.New(conf.Database, logg)
-	}
-
-	if err := storage.Connect(ctx); err != nil {
-		logg.Error(fmt.Sprintf("Connect to storage failed: %s", err.Error()))
-	}
-	return storage
 }
