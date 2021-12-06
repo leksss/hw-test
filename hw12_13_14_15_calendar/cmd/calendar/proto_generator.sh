@@ -1,10 +1,10 @@
 #!/bin/bash
 
-rm -rf ../../pb/event
-mkdir -p ../../pb/event
-protoc -I ../../api/googleapis -I ../../api/event \
-  --proto_path=../../api/event \
-  --go_out=../../pb/event \
-  --go-grpc_out=../../pb/event \
-  --grpc-gateway_out=../../pb/event \
-  ../../api/event/*.proto
+rm -rf ../../proto/protobuf
+mkdir -p ../../proto/protobuf
+protoc -I ../../proto/googleapis -I ../../proto/event \
+  --proto_path=../../proto/event \
+  --go_out=../../proto/protobuf \
+  --go-grpc_out=../../proto/protobuf \
+  --grpc-gateway_out=../../proto/protobuf \
+  ../../proto/event/*.proto

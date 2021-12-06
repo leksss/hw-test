@@ -3,7 +3,6 @@ module github.com/leksss/hw-test/hw12_13_14_15_calendar
 go 1.16
 
 require (
-	github.com/daixiang0/gci v0.2.9 // indirect
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/golang/protobuf v1.5.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0

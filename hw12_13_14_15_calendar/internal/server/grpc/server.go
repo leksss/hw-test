@@ -11,7 +11,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/domain/interfaces"
 	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/config"
-	pb "github.com/leksss/hw-test/hw12_13_14_15_calendar/pb/event"
+	pb "github.com/leksss/hw-test/hw12_13_14_15_calendar/proto/protobuf"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
