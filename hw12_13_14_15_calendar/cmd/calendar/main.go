@@ -105,7 +105,7 @@ func main() {
 		if err == nil {
 			continue
 		}
-		logg.Warn("shutdown err message", zap.Error(err))
+		logg.Info("shutdown err message", zap.Error(err))
 		if err.Error() == appShutdownMessage {
 			return
 		}
