@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/leksss/hw-test/hw12_13_14_15_calendar/cmd/calendar/version"
 	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/domain/interfaces"
 	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/config"
 	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/logger"
@@ -32,7 +33,7 @@ func main() {
 	configFile := flag.String("config", "configs/config.yaml", "path to conf file")
 	flag.Parse()
 	if flag.Arg(0) == "version" {
-		printVersion()
+		version.Print()
 		return
 	}
 
