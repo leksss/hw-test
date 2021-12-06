@@ -1,1 +1,15 @@
 version: "3"
+
+services:
+  db:
+    image: mysql:8.0.21
+    container_name: calendar_db
+    environment:
+      MYSQL_DATABASE: 'calendar'
+      MYSQL_USER: 'user'
+      MYSQL_PASSWORD: 'D3cdF3z7Du90n1Sq'
+      MYSQL_ROOT_PASSWORD: 'EBEnjUWoh205ZSjs'
+    ports:
+      - '3306:3306'
+    expose:
+      - '3306'

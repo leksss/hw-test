@@ -1,0 +1,16 @@
+env: dev
+
+server:
+  host: localhost
+  port: 8877
+
+logger:
+  level: INFO
+  file: logs/logger.json
+
+database:
+  host: localhost
+  user: user
+  password: D3cdF3z7Du90n1Sq
+  name: calendar
+  
