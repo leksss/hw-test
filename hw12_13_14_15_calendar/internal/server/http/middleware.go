@@ -1,4 +1,4 @@
-package internalgrpc
+package internalhttp
 
 import (
 	"fmt"

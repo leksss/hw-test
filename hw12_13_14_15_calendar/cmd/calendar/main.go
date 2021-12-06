@@ -16,6 +16,7 @@ import (
 	memory "github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/storage/memory"
 	mysql "github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/storage/sql"
 	grpc "github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/server/grpc"
+	http "github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/server/http"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
@@ -65,16 +66,17 @@ func main() {
 		defer db.Close()
 	}
 
-	server := grpc.NewServer(logg, conf, storage)
+	grpcServer := grpc.NewServer(logg, conf, storage)
+	httpServer := http.NewServer(logg, conf, storage)
 	errs := make(chan error)
 
 	go func() {
-		errs <- server.StartGRPC()
+		errs <- grpcServer.StartGRPC()
 	}()
 
 	go func() {
 		time.Sleep(500 * time.Millisecond)
-		errs <- server.StartHTTPProxy()
+		errs <- httpServer.StartHTTPProxy()
 	}()
 
 	go func() {
@@ -82,11 +84,11 @@ func main() {
 
 		success := make(chan string)
 		go func() {
-			errs <- server.StopHTTPProxy(context.Background())
+			errs <- httpServer.StopHTTPProxy(context.Background())
 			success <- "HTTP server successfully stopped"
 		}()
 		go func() {
-			server.StopGRPC()
+			grpcServer.StopGRPC()
 			success <- "gRPC server successfully stopped"
 		}()
 		go func() {
