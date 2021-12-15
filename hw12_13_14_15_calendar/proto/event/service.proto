@@ -14,18 +14,21 @@ service EventService {
       body: "*"
     };
   }
+
   rpc UpdateEvent (UpdateEventRequest) returns (UpdateEventResponse) {
     option (google.api.http) = {
       post: "/api/eventService/v1/event/update"
       body: "*"
     };
   }
+
   rpc DeleteEvent (DeleteEventRequest) returns (DeleteEventResponse) {
     option (google.api.http) = {
       post: "/api/eventService/v1/event/delete"
       body: "*"
     };
   }
+  
   rpc GetEventList (GetEventListRequest) returns (GetEventListEventResponse) {
     option (google.api.http) = {
       post: "/api/eventService/v1/event/get"
