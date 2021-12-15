@@ -5,9 +5,9 @@ package event;
 import "message.proto";
 import "google/api/annotations.proto";
 
-option go_package = "./;pb";
+option go_package = "../protobuf";
 
-service eventService {
+service EventService {
   rpc CreateEvent (CreateEventRequest) returns (CreateEventResponse) {
     option (google.api.http) = {
       post: "/api/eventService/v1/event/create"
