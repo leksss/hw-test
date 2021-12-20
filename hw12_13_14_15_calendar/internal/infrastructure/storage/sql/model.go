@@ -9,5 +9,5 @@ type eventDB struct {
 	StartedAt sql.NullTime `db:"started_at"`
 	EndedAt   sql.NullTime `db:"ended_at"`
 	Text      string       `db:"text"`
-	NotifyFor int64        `db:"notify_for"`
+	NotifyFor uint64       `db:"notify_for"`
 }

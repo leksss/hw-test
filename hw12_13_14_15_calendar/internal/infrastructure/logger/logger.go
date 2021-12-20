@@ -8,13 +8,6 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-type Log interface {
-	Info(msg string, fields ...zap.Field)
-	Warn(msg string, fields ...zap.Field)
-	Error(msg string, fields ...zap.Field)
-	Debug(msg string, fields ...zap.Field)
-}
-
 type Logger struct {
 	logger *zap.Logger
 }
@@ -41,6 +34,10 @@ func New(zapConfig zap.Config, config LoggConf, projectRoot string) *Logger {
 	return &Logger{
 		logger: logger,
 	}
+}
+
+func (l Logger) GetLogger() *zap.Logger {
+	return l.logger
 }
 
 func (l Logger) Info(msg string, fields ...zap.Field) {

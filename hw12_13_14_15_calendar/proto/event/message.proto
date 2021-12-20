@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package event;
+
+option go_package = "../protobuf";
+
+import "google/protobuf/timestamp.proto";
+
+message CreateEventRequest {
+  Event event = 1;
+}
+
+message CreateEventResponse {
+  bool success = 1;
+  repeated Error errors = 2;
+  string eventID = 3;
+}
+
+message UpdateEventRequest {
+  string eventID = 1;
+  Event event = 2;
+}
+
+message UpdateEventResponse {
+  bool success = 1;
+  repeated Error errors = 2;
+}
+
+message DeleteEventRequest {
+  string eventID = 1;
+}
+
+message DeleteEventResponse {
+  bool success = 1;
+  repeated Error errors = 2;
+}
+
+message GetEventListRequest {
+  int64 limit = 1;
+  int64 offset = 2;
+  string eventID = 3;
+}
+
+message GetEventListEventResponse {
+  bool success = 1;
+  repeated Error errors = 2;
+  repeated Event events = 3;
+}
+
+message Event {
+  // Уникальный идентификатор события UUID
+  string eventID = 1;
+
+  // ID пользователя, владельца события
+  string ownerID = 2;
+
+  // Заголовок - короткий текст
+  string title = 3;
+
+  // Дата и время начала события
+  google.protobuf.Timestamp startedAt = 4;
+
+  // Дата и время окончания события
+  google.protobuf.Timestamp endedAt = 5;
+
+  // Описание события - длинный текст, опционально
+  string text = 6;
+
+  // За сколько времени высылать уведомление, опционально
+  uint64 notifyFor = 7;
+}
+
+message Error {
+  string code = 1;
+  string msg = 2;
+}

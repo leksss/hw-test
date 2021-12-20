@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/logger"
+	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/domain/interfaces"
 )
 
-func loggingMiddleware(next http.Handler, log logger.Log) http.Handler {
+func loggingMiddleware(next http.Handler, log interfaces.Log) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		o := &responseObserver{ResponseWriter: w}
 

@@ -1,8 +1,12 @@
 env: dev
 
-server:
+http:
   host: localhost
-  port: 8877
+  port: 8080
+
+grpc:
+  host: localhost
+  port: 8081
 
 logger:
   level: INFO
@@ -10,7 +14,7 @@ logger:
 
 database:
   host: localhost
+  port: 3306
   user: user
   password: D3cdF3z7Du90n1Sq
   name: calendar
-  

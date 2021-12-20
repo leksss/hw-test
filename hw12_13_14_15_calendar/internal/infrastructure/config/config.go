@@ -7,9 +7,9 @@ import (
 	"path"
 	"runtime"
 
-	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/domain/interfaces"
 	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/logger"
-	internalhttp "github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/server/http"
+	sqlstorage "github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/storage/sql"
+	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/server"
 	"gopkg.in/yaml.v2"
 )
 
@@ -23,13 +23,14 @@ type Config struct {
 	projectRoot string
 
 	Env      string                  `yaml:"env"`
-	Server   internalhttp.ServerConf `yaml:"server"`
+	HTTPAddr server.Config           `yaml:"http"`
+	GRPCAddr server.Config           `yaml:"grpc"`
 	Logger   logger.LoggConf         `yaml:"logger"`
-	Database interfaces.DatabaseConf `yaml:"database"`
+	Database sqlstorage.DatabaseConf `yaml:"database"`
 }
 
-func NewConfig(configFile string) Config {
-	return Config{
+func NewConfig(configFile string) *Config {
+	return &Config{
 		configFile: configFile,
 	}
 }

@@ -2,6 +2,8 @@ package sqlstorage
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	_ "github.com/go-sql-driver/mysql" // nolint
 	"github.com/jmoiron/sqlx"
@@ -11,15 +13,17 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+const DefaultListLimit = 20
+
 type Storage struct {
-	db   *sqlx.DB
-	conf interfaces.DatabaseConf
+	db  *sqlx.DB
+	log interfaces.Log
 }
 
-func New(conf interfaces.DatabaseConf, db *sqlx.DB) *Storage {
+func New(db *sqlx.DB, log interfaces.Log) *Storage {
 	return &Storage{
-		conf: conf,
-		db:   db,
+		db:  db,
+		log: log,
 	}
 }
 
@@ -30,16 +34,18 @@ func (s *Storage) CreateEvent(ctx context.Context, event entities.Event) (string
 
 	uuID := uuid.NewV4()
 	sql := `INSERT INTO event (id, owner_id, title, started_at, ended_at, text, notify_for) 
-			VALUES (:ID, :OwnerID, :Title, :StartedAt, :EndedAt, :Text, :NotifyFor)`
-	_, err := s.db.NamedExecContext(ctx, sql, map[string]interface{}{
-		"ID":        uuID.String(),
+			VALUES (:EventID, :OwnerID, :Title, :StartedAt, :EndedAt, :Text, :NotifyFor)`
+	arg := map[string]interface{}{
+		"EventID":   uuID.String(),
 		"OwnerID":   event.OwnerID,
 		"Title":     event.Title,
 		"StartedAt": event.StartedAt,
 		"EndedAt":   event.EndedAt,
 		"Text":      event.Text,
 		"NotifyFor": event.NotifyFor,
-	})
+	}
+	_, err := s.db.NamedExecContext(ctx, sql, arg)
+	s.logQuery(sql, arg)
 	if err != nil {
 		return "", err
 	}
@@ -59,7 +65,7 @@ func (s *Storage) UpdateEvent(ctx context.Context, eventID string, event entitie
                  text=:Text, 
                  notify_for=:NotifyFor 
 			WHERE id=:EventID`
-	result, err := s.db.NamedExecContext(ctx, sql, map[string]interface{}{
+	arg := map[string]interface{}{
 		"OwnerID":   event.OwnerID,
 		"Title":     event.Title,
 		"StartedAt": event.StartedAt,
@@ -67,47 +73,13 @@ func (s *Storage) UpdateEvent(ctx context.Context, eventID string, event entitie
 		"Text":      event.Text,
 		"NotifyFor": event.NotifyFor,
 		"EventID":   eventID,
-	})
+	}
+	_, err := s.db.NamedExecContext(ctx, sql, arg)
+	s.logQuery(sql, arg)
 	if err != nil {
 		return err
 	}
-	cnt, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if cnt == 0 {
-		return errors.ErrNoAffectedEvent
-	}
-	return nil
-}
-
-func (s *Storage) isTimeForEventAvailable(ctx context.Context, eventID string, event entities.Event) error {
-	sql := `SELECT id FROM event
-			WHERE id!=:EventID AND owner_id=:OwnerID AND 
-				(:StartedAt BETWEEN started_at AND ended_at OR started_at BETWEEN :StartedAt AND :EndedAt)
-			LIMIT 1`
-	rows, err := s.db.NamedQueryContext(ctx, sql, map[string]interface{}{
-		"OwnerID":   event.OwnerID,
-		"StartedAt": event.StartedAt,
-		"EndedAt":   event.EndedAt,
-		"EventID":   eventID,
-	})
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-
-	var rowEventID int64
-	if rows.Next() {
-		err = rows.Scan(&rowEventID)
-		if err != nil {
-			return err
-		}
-	}
-	if rowEventID > 0 {
-		return errors.ErrDateBusy
-	}
-	return nil
+	return err
 }
 
 func (s *Storage) DeleteEvent(ctx context.Context, eventID string) error {
@@ -119,36 +91,58 @@ func (s *Storage) DeleteEvent(ctx context.Context, eventID string) error {
 		return errors.ErrNoEventFound
 	}
 	sql := `DELETE FROM event WHERE id=:eventID`
-	_, err = s.db.NamedExecContext(ctx, sql, map[string]interface{}{
+	arg := map[string]interface{}{
 		"eventID": eventID,
-	})
+	}
+	_, err = s.db.NamedExecContext(ctx, sql, arg)
+	s.logQuery(sql, arg)
 	return err
 }
 
-func (s *Storage) GetEventList(ctx context.Context, limit, offset int64) ([]entities.Event, error) {
-	sql := `SELECT * FROM event LIMIT :limit OFFSET :offset`
-	rows, err := s.db.NamedQueryContext(ctx, sql, map[string]interface{}{
-		"limit":  limit,
-		"offset": offset,
-	})
+func (s *Storage) GetEventList(ctx context.Context, filter entities.EventListFilter) ([]*entities.Event, error) {
+	if filter.Limit == 0 {
+		filter.Limit = DefaultListLimit
+	}
+
+	var sql string
+	var arg map[string]interface{}
+	if filter.EventID == "" {
+		sql = `SELECT * FROM event LIMIT :limit OFFSET :offset`
+		arg = map[string]interface{}{
+			"limit":  filter.Limit,
+			"offset": filter.Offset,
+		}
+	} else {
+		sql = `SELECT * FROM event WHERE id = :EventID`
+		arg = map[string]interface{}{
+			"EventID": filter.EventID,
+		}
+	}
+
+	rows, err := s.db.NamedQueryContext(ctx, sql, arg)
+	s.logQuery(sql, arg)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var events []entities.Event
+	var events []*entities.Event
 	var event eventDB
 	for rows.Next() {
 		err = rows.StructScan(&event)
 		if err != nil {
 			return nil, err
 		}
-		events = append(events, entities.Event{
-			ID:        event.ID,
+
+		startedAt := event.StartedAt.Time
+		endedAt := event.EndedAt.Time
+
+		events = append(events, &entities.Event{
+			EventID:   event.ID,
 			OwnerID:   event.OwnerID,
 			Title:     event.Title,
-			StartedAt: &event.StartedAt.Time,
-			EndedAt:   &event.EndedAt.Time,
+			StartedAt: &startedAt,
+			EndedAt:   &endedAt,
 			Text:      event.Text,
 			NotifyFor: event.NotifyFor,
 		})
@@ -158,20 +152,68 @@ func (s *Storage) GetEventList(ctx context.Context, limit, offset int64) ([]enti
 
 func (s *Storage) getEventByID(ctx context.Context, eventID string) (*entities.Event, error) {
 	sql := `SELECT * FROM event	WHERE id=:EventID`
-	rows, err := s.db.NamedQueryContext(ctx, sql, map[string]interface{}{
+	arg := map[string]interface{}{
 		"EventID": eventID,
-	})
+	}
+	rows, err := s.db.NamedQueryContext(ctx, sql, arg)
+	s.logQuery(sql, arg)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
+	if !rows.Next() {
+		return nil, nil
+	}
 
-	var event *entities.Event
+	var eventDB eventDB
+	err = rows.StructScan(&eventDB)
+	if err != nil {
+		return nil, err
+	}
+
+	return &entities.Event{
+		EventID:   eventDB.ID,
+		OwnerID:   eventDB.OwnerID,
+		Title:     eventDB.Title,
+		StartedAt: &eventDB.StartedAt.Time,
+		EndedAt:   &eventDB.EndedAt.Time,
+		Text:      eventDB.Text,
+		NotifyFor: eventDB.NotifyFor,
+	}, nil
+}
+
+func (s *Storage) isTimeForEventAvailable(ctx context.Context, eventID string, event entities.Event) error {
+	sql := `SELECT id FROM event
+			WHERE id!=:EventID AND owner_id=:OwnerID AND 
+				(:StartedAt BETWEEN started_at AND ended_at OR started_at BETWEEN :StartedAt AND :EndedAt)
+			LIMIT 1`
+	arg := map[string]interface{}{
+		"OwnerID":   event.OwnerID,
+		"StartedAt": event.StartedAt,
+		"EndedAt":   event.EndedAt,
+		"EventID":   eventID,
+	}
+	rows, err := s.db.NamedQueryContext(ctx, sql, arg)
+	s.logQuery(sql, arg)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	var rowEventID string
 	if rows.Next() {
-		err = rows.StructScan(&event)
+		err = rows.Scan(&rowEventID)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
-	return event, nil
+	if rowEventID != "" {
+		return errors.ErrDateBusy
+	}
+	return nil
+}
+
+func (s *Storage) logQuery(sql string, arg map[string]interface{}) {
+	byteArg, _ := json.MarshalIndent(arg, "", "  ")
+	s.log.Info(fmt.Sprintf("%s %s", sql, string(byteArg)))
 }

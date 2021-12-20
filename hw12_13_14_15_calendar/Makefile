@@ -36,3 +36,6 @@ migrate:
 	go run cmd/migration/main.go -dir=./migrations mysql up
 
 .PHONY: build run build-img run-img version test lint
+
+generate:
+	go generate ./cmd/calendar

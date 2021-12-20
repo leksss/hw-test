@@ -5,46 +5,53 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/logger"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/domain/interfaces"
+	"github.com/leksss/hw-test/hw12_13_14_15_calendar/internal/infrastructure/config"
+	pb "github.com/leksss/hw-test/hw12_13_14_15_calendar/proto/protobuf"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
 )
 
-type ServerConf struct {
-	Host string
-	Port string
-}
-
 type Server struct {
-	srv    *http.Server
-	logger logger.Log
+	grpcAddr string
+	http     *http.Server
+	log      interfaces.Log
 }
 
-func NewServer(logger logger.Log, cfg ServerConf) *Server {
-	server := &http.Server{
-		Addr:    fmt.Sprintf("%s:%s", cfg.Host, cfg.Port),
-		Handler: createRouter(logger),
-	}
+func NewServer(log interfaces.Log, config *config.Config, storage interfaces.Storage) *Server {
 	return &Server{
-		srv:    server,
-		logger: logger,
+		log:      log,
+		grpcAddr: config.GRPCAddr.DSN(),
+		http: &http.Server{
+			Addr: config.HTTPAddr.DSN(),
+		},
 	}
 }
 
-func (s *Server) Start() error {
-	return s.srv.ListenAndServe()
+func (s *Server) StartHTTPProxy() error {
+	conn, err := grpc.DialContext(
+		context.Background(),
+		s.grpcAddr,
+		grpc.WithBlock(),
+		grpc.WithInsecure(),
+	)
+	if err != nil {
+		s.log.Error("failed to dial server:", zap.Error(err))
+	}
+
+	gwMux := runtime.NewServeMux()
+	err = pb.RegisterEventServiceHandler(context.Background(), gwMux, conn)
+	if err != nil {
+		s.log.Error("failed to register gateway:", zap.Error(err))
+	}
+
+	s.http.Handler = loggingMiddleware(gwMux, s.log)
+	s.log.Info(fmt.Sprintf("serving gRPC-Gateway on %s", s.http.Addr))
+	return s.http.ListenAndServe()
 }
 
-func (s *Server) Stop(ctx context.Context) error {
-	return s.srv.Shutdown(ctx)
-}
-
-func (s *Server) GetServerAddr() string {
-	return s.srv.Addr
-}
-
-func createRouter(logger logger.Log) http.Handler {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		fmt.Fprintf(w, "<h1>Hello</h1><div>Index page for Calendar</div>")
-	})
-	return loggingMiddleware(mux, logger)
+func (s *Server) StopHTTPProxy(ctx context.Context) error {
+	s.log.Info("stopping HTTP proxy server...")
+	return s.http.Shutdown(ctx)
 }
